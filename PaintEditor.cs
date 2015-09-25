@@ -8,14 +8,14 @@ public class PaintEditor : EditorWindow
 
 	//ウィンドウ座標
 	private const float WINDOW_POS_X = 300.0f;
-	private const float WINDOW_POS_Y = 50.0f;
+	private const float WINDOW_POS_Y = 20.0f;
 	private const float WINDOW_W = 400.0f;
-	private const float WINDOW_H = 690.0f;
+	private const float WINDOW_H = 700.0f;
 
 	//ドット絵描画座標
 	private const float OFFSET_POS_X = 10;
-	private const float OFFSET_POS_Y = 300;
-	
+	private const float OFFSET_POS_Y = 310;
+
 	//一辺の最大値
 	private const float MAX_SIDE = 380;
 
@@ -23,10 +23,12 @@ public class PaintEditor : EditorWindow
 	public static PaintEditor window;
 	public static Rect[,] rectList = new Rect[64, 64];
 	public static Color[,] rectColor = new Color[64, 64];
-	
+	public static bool[,] bucketChange = new bool[64, 64]; 
+
+
 	//出力する時のファイル名
 	public static string imgName = "ImageName";
-	
+
 	//ドット数の高さと幅の初期値
 	public static int width = 8;
 	public static int height = 8;
@@ -45,9 +47,10 @@ public class PaintEditor : EditorWindow
 	private Texture2D whiteTexture = Texture2D.whiteTexture;
 	private GlidLineStr glidLineStr = GlidLineStr.Black;
 	private Tools tools = Tools.Pen;
-	private ExportType exportType = ExportType.PNG;
-	
-	// グリッド線の色
+
+	/// <summary>
+	/// グリッド線の色
+	/// </summary>
 	private Color[] glidColor = new Color[]
 	{
 		Color.clear,
@@ -55,7 +58,9 @@ public class PaintEditor : EditorWindow
 		Color.white
 	};
 
-	// グリッド線の文字列
+	/// <summary>
+	/// グリッド線の文字列
+	/// </summary>
 	public enum GlidLineStr
 	{
 		None,
@@ -63,7 +68,9 @@ public class PaintEditor : EditorWindow
 		White,
 	}
 
-	// ツールリスト
+	/// <summary>
+	/// ツールリスト
+	/// </summary>
 	public enum Tools
 	{
 		Pen,
@@ -71,14 +78,10 @@ public class PaintEditor : EditorWindow
 		Backet,
 	}
 
-	// 出力形式
-	public enum ExportType
-	{
-		PNG,
-		JPEG
-	}
 
-	//ペイントツールを開く
+	/// <summary>
+	/// ペイントツールを開く
+	/// </summary>
 	[MenuItem("Tools/DotPaintTool/PaintTool")]
 	public static void OpenPaintTool()
 	{
@@ -88,7 +91,9 @@ public class PaintEditor : EditorWindow
 		window.Show();
 	}
 
-	//ペイントツールを開くときの初期化
+	/// <summary>
+	/// ペイントツールを開く時の初期化
+	/// </summary>
 	public static void Init()
 	{
 		for (int i = 0; i < width; i++)
@@ -98,6 +103,9 @@ public class PaintEditor : EditorWindow
 		}
 	}
 
+	/// <summary>
+	/// ペイントツールのレイアウト
+	/// </summary>
 	void OnGUI()
 	{
 		EditorGUILayout.Space();
@@ -154,27 +162,19 @@ public class PaintEditor : EditorWindow
 		EditorGUILayout.Space();
 		GUILayout.Label("GridLine", EditorStyles.boldLabel);
 		glidLineStr = (GlidLineStr)GUILayout.Toolbar((int)glidLineStr, new string[] { "None", "Black", "White" });
-		tools = (Tools)GUILayout.Toolbar((int)tools, new string[] { "Pen", "Eraser", "Baket" });
+		tools = (Tools)GUILayout.Toolbar((int)tools, new string[] { "Pen", "Eraser", "Bucket" });
 		EditorGUILayout.Space();
 
-
-		EditorGUILayout.LabelField("ExprotSetting", EditorStyles.boldLabel);
-		EditorGUILayout.BeginHorizontal();
-
-		//出力形式を選択
-		exportType = (ExportType)EditorGUILayout.EnumPopup(exportType);
+		EditorGUILayout.LabelField("Exprot", EditorStyles.boldLabel);
 
 		//出力ボタンが押されたとき
-		if (GUILayout.Button("Export"))
+		if (GUILayout.Button("PNG Export"))
 			ExportImg();
-		EditorGUILayout.EndHorizontal();
-
 
 		var max = width > height ? width : height;
 
 		if (max == 0)
 			return;
-
 
 		var side = MAX_SIDE / max;
 		for (int i = 0; i < width; i++)
@@ -204,7 +204,7 @@ public class PaintEditor : EditorWindow
 
 		wantsMouseMove = true;
 		var action = Event.current;
-		
+
 		if (action.type == EventType.MouseDrag ||
 			action.type == EventType.MouseDown)
 		{
@@ -254,7 +254,25 @@ public class PaintEditor : EditorWindow
 						rectColor[xx, yy] = Color.clear;
 						break;
 					case Tools.Backet:
+
+						for (int i = 0; i < 64; i++)
+						{
+							for (int j = 0; j < 64; j++)
+								bucketChange[i, j] = false;
+						}
+
+						Bucket(xx, yy);
+
 						rectColor[xx, yy] = nowColor;
+						for (int i = 0; i < 64; i++)
+						{
+							for(int j = 0; j < 64; j++)
+							{
+								if(bucketChange[i, j])
+									rectColor[i, j] = nowColor;
+							}
+						}
+
 						break;
 				}
 
@@ -269,6 +287,8 @@ public class PaintEditor : EditorWindow
 	void ExportImg()
 	{
 		Texture2D tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
+
+		//Texture2Dに色情報を入れる
 		for (int i = width - 1; i >= 0; i--)
 		{
 			for (int j = height - 1; j >= 0; j--)
@@ -276,27 +296,49 @@ public class PaintEditor : EditorWindow
 				tex.SetPixel(i, j, rectColor[i, height - j - 1]);
 			}
 		}
+
+		//エンコードに入れる用の変数
 		byte[] imgData = null;
+
+		//ファイルのパス
 		string filePath = "";
 
+		imgData = tex.EncodeToPNG();
+		filePath = EditorUtility.SaveFilePanel("Save Texture", "", imgName + ".png", "png");
 
-		if (exportType == ExportType.PNG)
-		{
-			imgData = tex.EncodeToPNG();
-			filePath = EditorUtility.SaveFilePanel("Save Texture", "", imgName + ".png", "png");
-		}
-		else if (exportType == ExportType.JPEG)
-		{
-			imgData = tex.EncodeToJPG();
-			filePath = EditorUtility.SaveFilePanel("Save Texture", "", imgName + ".jpeg", "jpeg");
-		}
 
 		if (filePath.Length > 0)
 		{
 			File.WriteAllBytes(filePath, imgData);
 		}
 	}
+
+
+	/// <summary>
+	/// Bucketツールを使ったとき
+	/// 再帰呼び出し関数
+	/// </summary>
+	/// <param name="i">X</param>
+	/// <param name="j">Y</param>
+	void Bucket(int i, int j)
+	{
+		//塗る配列をTrueにする
+		bucketChange[i, j] = true;
+
+		//添え字が配列内、かつ隣が同じ色の時、かつチェック済でないところ
+		if (i < 63 && rectColor[i, j] == rectColor[i + 1, j] && !bucketChange[i + 1, j])
+			Bucket(i + 1, j);
+		if (i > 0 && rectColor[i, j] == rectColor[i -1, j] && !bucketChange[i-1, j])
+			Bucket(i - 1, j);
+		if (j < 63 && rectColor[i, j] == rectColor[i, j + 1] && !bucketChange[i, j + 1])
+			Bucket(i, j + 1);
+		if (j >0 && rectColor[i, j] == rectColor[i, j - 1] && !bucketChange[i, j-1])
+			Bucket(i, j - 1);
+
+	}
 }
+
+
 
 /// <summary>
 ///	幅と高さを決めるウィンドウ
