@@ -78,7 +78,6 @@ public class PaintEditor : EditorWindow
 		Backet,
 	}
 
-
 	/// <summary>
 	/// ペイントツールを開く
 	/// </summary>
