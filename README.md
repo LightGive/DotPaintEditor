@@ -8,5 +8,5 @@ Createでエディット画面に入ります。
 エディット画面のNewImageボタンで新しく作られます。  
 NowColorとSubColorの右のSelectボタンを押すと左の色が選択されます。  
 GridLineのところででグリッド線を指定できます。  
-Pen、Eraser、Baketツールがあります。  
+Pen、Eraser、Baketツールがあります
 
