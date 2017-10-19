@@ -1,6 +1,7 @@
 # DotPaintEditor
 Unityのドット絵ペイントツールのエディタ拡張です  
 
+
 ## 使い方
 Unityのフォルダの何処かにEditorフォルダを作成してDotPaintEditor.csをいれてください。  
 UnityのメニューバーのToolsの中にあるNewImageからファイル名・幅と高さを指定して、  
