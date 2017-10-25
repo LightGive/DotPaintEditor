@@ -10,4 +10,3 @@ Createでエディット画面に入ります。
 NowColorとSubColorの右のSelectボタンを押すと左の色が選択されます。  
 GridLineのところででグリッド線を指定できます。  
 Pen、Eraser、Baketツールがあります
-
